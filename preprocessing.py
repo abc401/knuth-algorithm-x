@@ -28,3 +28,7 @@ def get_filtered_words(filename: str) -> list[int]:
     words = encode_words(words)
     words = secondary_filter(words)
     return words
+
+if __name__ == '__main__':
+    a = encode_str('a')
+    print(a >> 25)
