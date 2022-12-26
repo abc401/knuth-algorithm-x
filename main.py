@@ -1,22 +1,15 @@
 from copy import deepcopy
 
 
-def exact_cover(subsets: list, elements: list):
-    # Calculate matrix for knuth x
+def make_matrix(subsets: list, elements: list):
     matrix = {
         element: [subset for subset in subsets if element in subset]
         for element in elements
     }
-    return knuth_x(matrix)
+    return matrix
 
 
 def knuth_x(matrix: dict, partial_solution: list = [], solutions: list = []):
-    '''
-    matrix: A dictionary whose keys are the elements of the sets,
-        and whose values are the subsets that contain the specific element in them
-        
-    partial_solution: The subset that have yet been included in the solution set    
-    '''
     if not matrix:
         solutions.append(partial_solution.copy())
         print(f'Solution Found: {partial_solution}')
@@ -63,7 +56,8 @@ def main(filename: str, required_len: int = 5):
         [1, 4],
     ]
     elements = [1, 2, 3, 4, 5, 6, 7]
-    sol_set = exact_cover(subsets, elements)
+    matrix = make_matrix(subsets, elements)
+    sol_set = knuth_x(matrix)
     print(sol_set)
 
 
