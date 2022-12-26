@@ -1,91 +1,71 @@
-import logging as lg
-from random import choice
-from preprocessing import get_filtered_words, encode_words, encode_str
+from copy import deepcopy
 
 
-def different(num1: int, num2: int) -> bool:
+def exact_cover(subsets: list, elements: list):
+    # Calculate matrix for knuth x
+    matrix = {
+        element: [subset for subset in subsets if element in subset]
+        for element in elements
+    }
+    return knuth_x(matrix)
+
+
+def knuth_x(matrix: dict, partial_solution: list = [], solutions: list = []):
     '''
-    Return True if for every bit in num1 that is set to 1, the equivalent bit in num2 is not set to 1
-    '''
-    n = ~ (num1 & num2)
-    return ((n+1) & n == 0) and (n != 0)
-
-
-def get_letters(en_word: int) -> list[int]:
-    letters = []
-    for i in range(26):
-        if (en_word >> i) & 1:
-            letters.append(i)
-    return letters
-
-
-def get_rows(words: list[int]):
-    rows = [list() for i in range(26)]
-    for word in words:
-        for i in range(26):
-            if (word >> 25 - i) & 1:
-                rows[i].append(word)
-    return dict(enumerate(rows))
-
-def get_counts(words: list[int]):
-    counts = {}
-    for word in words:
-        for i in range(26):
-            bit_value = (word >> 25 - i) & 1
-            counts[i] = counts.get(i, 0) + bit_value
-    return counts
-
-# TODO: Not include rows in count if they are not required by knuth x in current iteration
-
-def knuth_x(words: list[int], n_excluded: int = 0, n_exclude: int = 1, rows = None):
-    sol_sets = []
-    if rows is None:
-        rows = get_rows(words)
-    counts = get_counts(words)
-    
-    
-    minimum = min(counts, key=lambda x: counts[x])
-    while not rows[minimum]:
-        n_excluded += 1
-        if n_excluded >= n_exclude:
-            return sol_sets
-        counts.pop(minimum)
-        minimum = min(counts, key=lambda x: counts[x])
-            
-    min_rows = rows[minimum]
-    while min_rows:
-        selected = choice(min_rows)
-        min_rows.remove(selected)
-        current_sol_set = [selected]
-        letters = get_letters(selected)
-        remaining_choices = {index: col for index, col in rows.items() if index not in letters}
-        if not remaining_choices:
-            sol_sets.append(current_sol_set)   # Found a valid solution
-            continue
+    matrix: A dictionary whose keys are the elements of the sets,
+        and whose values are the subsets that contain the specific element in them
         
-        sub_sols = knuth_x(remaining_choices, rows=remaining_choices)
-        if sub_sols:
-            sol_sets.extend([current_sol_set.extend(sub_sol) for sub_sol in sub_sols])
-    return sol_sets
+    partial_solution: The subset that have yet been included in the solution set    
+    '''
+    if not matrix:
+        solutions.append(partial_solution.copy())
+        print(f'Solution Found: {partial_solution}')
+        return solutions
+    
+    selected = min(matrix, key=lambda x: len(matrix[x]))
+    if not matrix[selected]:
+        return solutions
+    
+    for subset in matrix[selected]:
+        matrix_copy = deepcopy(matrix)
+        remove_subset(matrix_copy, subset)
+
+        partial_solution.append(subset)
+        knuth_x(matrix_copy, partial_solution, solutions)
+        partial_solution.pop(-1)
+    
+    return solutions
 
 
-def main(filename: str):
-    words = get_filtered_words(filename)
-    print(knuth_x(words))
+def combine_solutions(current_solution: list, subset_solutions: list[list]):
+    return [current_solution + subset_solution for subset_solution in subset_solutions]
+    
+
+def remove_element(matrix: dict, element: str):
+    matrix.pop(element)    
+    for m_element in matrix:
+        matrix[m_element] = [subset for subset in matrix[m_element] if element not in subset]
+
+
+def remove_subset(matrix: dict, subset: set):
+    for s_element in subset:
+        remove_element(matrix, s_element)    
+
+
+def main(filename: str, required_len: int = 5):
+    subsets = [
+        [1, 4, 7],
+        [1, 4],
+        [4, 5, 7],
+        [3, 5, 6],
+        [2, 3, 6, 7],
+        [2, 7],
+        [1, 4],
+    ]
+    elements = [1, 2, 3, 4, 5, 6, 7]
+    sol_set = exact_cover(subsets, elements)
+    print(sol_set)
 
 
 if __name__ == '__main__':
-    lg.basicConfig(level=lg.INFO)
-    words = ['abcde',
-             'fghij',
-             'klmno',
-             'pqrst',
-             'uvwxy',
-             'zabcd',
-             'efghi']
-    # words = encode_words(words)
-    # print(words)
-    # print(least_ones_col(words))
-    #p, 44040736 10488352 [5, 9, 11, 21, 23]
-    print(encode_str('fjlvx'))
     main('wordlist.txt')

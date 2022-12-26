@@ -129,3 +129,7 @@ dmypy.json
 .pyre/
 
 .vscode/
+tmp.py
+
+# File made by code runner extension in vs code
+tempCodeRunnerFile.py
